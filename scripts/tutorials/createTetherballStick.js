@@ -13,7 +13,7 @@
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-var SCRIPT_URL = "https://raw.githubusercontent.com/Triplelexx/hifi/32bf3912f917b72df2e6099f9d27482b53623fda/scripts/tutorials/entity_scripts/tetherballStick.js";
+var SCRIPT_URL =  Script.resolvePath("./entity_scripts/tetherballStick.js");
 var MODEL_URL = "http://hifi-content.s3.amazonaws.com/caitlyn/production/raveStick/newRaveStick2.fbx?v=" + Date.now();
 var COLLISION_SOUND_URL = "http://hifi-production.s3.amazonaws.com/tutorials/pistol/drop.wav";
 var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
@@ -132,13 +132,16 @@ var offsetActionID = Entities.addAction("offset", ballID, {
 // now the other items have been created the references can be added to the userData
 var dataProps = Entities.getEntityProperties(stickID);
 if (dataProps.userData) {
-    var data = JSON.parse(dataProps.userData);
-    data.actionID = offsetActionID;
-    data.ballID = ballID;
-    data.lineID = lineID;
-    Entities.editEntity(stickID, {
-        userData: JSON.stringify(data)
-    });
+    try {
+        var data = JSON.parse(dataProps.userData);
+        data.actionID = offsetActionID;
+        data.ballID = ballID;
+        data.lineID = lineID;
+        Entities.editEntity(stickID, {
+            userData: JSON.stringify(data)
+        });
+    } catch (e) {
+    }
 }
 
 Script.stop();

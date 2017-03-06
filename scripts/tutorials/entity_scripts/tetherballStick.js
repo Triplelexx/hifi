@@ -44,13 +44,16 @@
         update: function(dt) {
             var dataProps = Entities.getEntityProperties(_this.entityID);
             if (dataProps.userData) {
-                var data = JSON.parse(dataProps.userData);
-                if(data.userID == MyAvatar.sessionUUID && _this.hasBall()) {
-                    // updating every tick seems excessive, so repositioning is throttled here
-                    if(Date.now() - _this.lastReposition > REPOSITION_INTERVAL) {
-                        _this.lastReposition = Date.now();
-                        _this.repositionTether();
+                try {
+                    var data = JSON.parse(dataProps.userData);
+                    if(data.userID == MyAvatar.sessionUUID && _this.hasBall()) {
+                        // updating every tick seems excessive, so repositioning is throttled here
+                        if(Date.now() - _this.lastReposition > REPOSITION_INTERVAL) {
+                            _this.lastReposition = Date.now();
+                            _this.repositionTether();
+                        }
                     }
+                } catch (e) {
                 }
             }
         },
@@ -78,39 +81,46 @@
             var MIN_LENGTH = NULL_UUID.length -1;
             var dataProps = Entities.getEntityProperties(this.entityID);
             if (dataProps.userData) {
-                var data = JSON.parse(dataProps.userData);
-                return data.ballID != NULL_UUID && data.ballID.length >= MIN_LENGTH;
+                try {
+                    var data = JSON.parse(dataProps.userData);
+                    return data.ballID != NULL_UUID && data.ballID.length >= MIN_LENGTH;
+                } catch (e) {
+                    return false;
+                }
             }
         },
 
         repositionTether: function() {
             var dataProps = Entities.getEntityProperties(this.entityID);
             if (dataProps.userData) {
-                var data = JSON.parse(dataProps.userData);
+                try {
+                    var data = JSON.parse(dataProps.userData);
 
-                Entities.updateAction(data.ballID, data.actionID, {
-                    pointToOffsetFrom: dataProps.position,
-                    linearDistance: TETHER_LENGTH,
-                    linearTimeScale: TETHER_TIMESCALE
-                });
+                    Entities.updateAction(data.ballID, data.actionID, {
+                        pointToOffsetFrom: dataProps.position,
+                        linearDistance: TETHER_LENGTH,
+                        linearTimeScale: TETHER_TIMESCALE
+                    });
 
-                var ballProps = Entities.getEntityProperties(data.ballID);
-                var linePoints = [];
-                var normals = [];
-                var strokeWidths = [];
-                linePoints.push(Vec3.ZERO);
-                normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
-                strokeWidths.push(TETHER_WIDTH);
-                linePoints.push(Vec3.subtract(ballProps.position, dataProps.position));
-                normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
-                strokeWidths.push(TETHER_WIDTH);
+                    var ballProps = Entities.getEntityProperties(data.ballID);
+                    var linePoints = [];
+                    var normals = [];
+                    var strokeWidths = [];
+                    linePoints.push(Vec3.ZERO);
+                    normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
+                    strokeWidths.push(TETHER_WIDTH);
+                    linePoints.push(Vec3.subtract(ballProps.position, dataProps.position));
+                    normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
+                    strokeWidths.push(TETHER_WIDTH);
 
-                Entities.editEntity(data.lineID, {
-                    linePoints: linePoints,
-                    normals: normals,
-                    strokeWidths: strokeWidths,
-                    position: dataProps.position
-                });
+                    Entities.editEntity(data.lineID, {
+                        linePoints: linePoints,
+                        normals: normals,
+                        strokeWidths: strokeWidths,
+                        position: dataProps.position
+                    });
+                } catch (e) {
+                }
             }
         }
     };
