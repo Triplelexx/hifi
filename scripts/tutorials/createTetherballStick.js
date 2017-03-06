@@ -86,7 +86,7 @@ var STICK_PROPERTIES = {
   })
 };
 
-var stick = Entities.addEntity(STICK_PROPERTIES);
+var stickID = Entities.addEntity(STICK_PROPERTIES);
 
 var ballID = Entities.addEntity({
     type: "Model",
@@ -130,13 +130,13 @@ var offsetActionID = Entities.addAction("offset", ballID, {
 });
 
 // now the other items have been created the references can be added to the userData
-var dataProps = Entities.getEntityProperties(stick);
+var dataProps = Entities.getEntityProperties(stickID);
 if (dataProps.userData) {
     var data = JSON.parse(dataProps.userData);
     data.actionID = offsetActionID;
     data.ballID = ballID;
     data.lineID = lineID;
-    Entities.editEntity(stick, {
+    Entities.editEntity(stickID, {
         userData: JSON.stringify(data)
     });
 }
