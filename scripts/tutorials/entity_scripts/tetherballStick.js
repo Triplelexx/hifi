@@ -78,12 +78,11 @@
         },
 
         hasBall: function() {
-            var MIN_LENGTH = NULL_UUID.length -1;
             var dataProps = Entities.getEntityProperties(this.entityID);
             if (dataProps.userData) {
                 try {
                     var data = JSON.parse(dataProps.userData);
-                    return data.ballID != NULL_UUID && data.ballID.length >= MIN_LENGTH;
+                    return data.ballID != NULL_UUID && data.ballID.length == NULL_UUID.length;
                 } catch (e) {
                     return false;
                 }
