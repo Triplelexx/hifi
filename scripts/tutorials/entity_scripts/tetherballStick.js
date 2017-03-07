@@ -159,6 +159,14 @@
 
         createBall: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
+            // don't make a ball if we have an ID
+            try {
+                var data = JSON.parse(stickProps.userData);
+                if (data.ballID != undefined) {
+                    return;
+                }
+            } catch (e) { }
+            
             this.ballID = Entities.addEntity({
                 type: "Model",
                 modelURL: "http://hifi-content.s3.amazonaws.com/Examples%20Content/production/marblecollection/Star.fbx",
@@ -184,6 +192,15 @@
                 dynamic: true,
                 collidesWith: "static,dynamic,otherAvatar,"
             });
+
+            // add reference to userData
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                stickData.ballID = this.ballID;
+                Entities.editEntity(stickID, {
+                    userData: JSON.stringify(stickData)
+                });
+            } catch (e) {}
         },
 
         hasBall: function() {
@@ -193,12 +210,29 @@
 
         createAction: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
+            // don't make an action if we have an ID
+            try {
+                var data = JSON.parse(stickProps.userData);
+                if (data.actionID != actionID) {
+                    return;
+                }
+            } catch (e) { }
+            
             var actionID = Entities.addAction("offset", this.ballID, {
                 pointToOffsetFrom: stickProps.position,
                 linearDistance: 0,
                 tag: ACTION_TAG,
                 linearTimeScale: ACTION_TIMESCALE
             });
+
+            // add reference to userData
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                stickData.actionID = this.actionID;
+                Entities.editEntity(stickID, {
+                    userData: JSON.stringify(stickData)
+                });
+            } catch (e) {}
         },
 
         hasAction: function() {
