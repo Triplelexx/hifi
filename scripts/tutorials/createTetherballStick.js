@@ -14,7 +14,7 @@
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 var STICK_SCRIPT_URL =  Script.resolvePath("./entity_scripts/tetherballStick.js?v=" + Date.now());
-var STICK_MODEL_URL = "http://hifi-content.s3.amazonaws.com/caitlyn/production/raveStick/newRaveStick2.fbx?v=" + Date.now();
+var STICK_MODEL_URL = "http://hifi-content.s3.amazonaws.com/caitlyn/production/raveStick/newRaveStick2.fbx";
 var COLLISION_SOUND_URL = "http://hifi-production.s3.amazonaws.com/tutorials/pistol/drop.wav";
 var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
 
