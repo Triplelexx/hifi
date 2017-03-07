@@ -20,7 +20,7 @@
     var REPOSITION_INTERVAL = 30; // time in ms
     var TETHER_LENGTH = 0.5;
     var TETHER_TIMESCALE = 0.01;
-    var TETHER_WIDTH = 0.2;
+    var TETHER_WIDTH = 0.02;
 
     tetherballStick = function() {
         _this = this;
@@ -48,7 +48,7 @@
                     var data = JSON.parse(dataProps.userData);
                     if(data.userID == MyAvatar.sessionUUID && _this.hasBall()) {
                         // updating every tick seems excessive, so repositioning is throttled here
-                        if(Date.now() - _this.lastReposition > REPOSITION_INTERVAL) {
+                        if(Date.now() - _this.lastReposition >= REPOSITION_INTERVAL) {
                             _this.lastReposition = Date.now();
                             _this.repositionTether();
                         }
@@ -67,7 +67,7 @@
                 return;
             }
             // updating every tick seems excessive, so repositioning is throttled here
-            if(Date.now() - this.lastReposition > REPOSITION_INTERVAL) {
+            if(Date.now() - this.lastReposition >= REPOSITION_INTERVAL) {
                 this.lastReposition = Date.now();
                 this.repositionTether();
             }
@@ -91,33 +91,33 @@
         },
 
         repositionTether: function() {
-            var dataProps = Entities.getEntityProperties(this.entityID);
-            if (dataProps.userData) {
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            if (stickProps.userData) {
                 try {
-                    var data = JSON.parse(dataProps.userData);
+                    var stickData = JSON.parse(stickProps.userData);
 
-                    Entities.updateAction(data.ballID, data.actionID, {
-                        pointToOffsetFrom: dataProps.position,
+                    Entities.updateAction(stickData.ballID, stickData.actionID, {
+                        pointToOffsetFrom: stickProps.position,
                         linearDistance: TETHER_LENGTH,
                         linearTimeScale: TETHER_TIMESCALE
                     });
 
-                    var ballProps = Entities.getEntityProperties(data.ballID);
+                    var ballProps = Entities.getEntityProperties(stickData.ballID);
                     var linePoints = [];
                     var normals = [];
                     var strokeWidths = [];
                     linePoints.push(Vec3.ZERO);
                     normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
                     strokeWidths.push(TETHER_WIDTH);
-                    linePoints.push(Vec3.subtract(ballProps.position, dataProps.position));
+                    linePoints.push(Vec3.subtract(ballProps.position, stickProps.position));
                     normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
                     strokeWidths.push(TETHER_WIDTH);
 
-                    Entities.editEntity(data.lineID, {
+                    Entities.editEntity(stickData.lineID, {
                         linePoints: linePoints,
                         normals: normals,
                         strokeWidths: strokeWidths,
-                        position: dataProps.position
+                        position: stickProps.position
                     });
                 } catch (e) {
                 }

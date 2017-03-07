@@ -13,8 +13,8 @@
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-var SCRIPT_URL =  Script.resolvePath("./entity_scripts/tetherballStick.js");
-var MODEL_URL = "http://hifi-content.s3.amazonaws.com/caitlyn/production/raveStick/newRaveStick2.fbx?v=" + Date.now();
+var STICK_SCRIPT_URL =  Script.resolvePath("./entity_scripts/tetherballStick.js?v=" + Date.now());
+var STICK_MODEL_URL = "http://hifi-content.s3.amazonaws.com/caitlyn/production/raveStick/newRaveStick2.fbx?v=" + Date.now();
 var COLLISION_SOUND_URL = "http://hifi-production.s3.amazonaws.com/tutorials/pistol/drop.wav";
 var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
 
@@ -27,30 +27,22 @@ var startPosition = Vec3.sum(MyAvatar.getHeadPosition(), Vec3.multiply(2, Quat.g
 var STICK_PROPERTIES = {
   type: 'Model',
   name: "Tetherball Stick",
-  modelURL: MODEL_URL,
+  modelURL: STICK_MODEL_URL,
   position: startPosition,
   dimensions: {
-    x: 0.05,
-    y: 0.23,
-    z: 0.36
+    x: 0.0651,
+    y: 0.0651,
+    z: 0.5270
   },
-  script: SCRIPT_URL,
+  script: STICK_SCRIPT_URL,
   color: {
     red: 200,
     green: 0,
     blue: 20
   },
   shapeType: 'box',
-  dynamic: true,
-  gravity: {
-    x: 0,
-    y: -9.8,
-    z: 0
-  },
+  dynamic: false,
   lifetime: 3600,
-  restitution: 0,
-  damping: 0.5,
-  collisionSoundURL: COLLISION_SOUND_URL,
   userData: JSON.stringify({
     userID: MyAvatar.sessionUUID,
     ballID: NULL_UUID,
@@ -116,8 +108,8 @@ var ballID = Entities.addEntity({
 var lineID = Entities.addEntity({
     type: "PolyLine",
     name: "Tetherball Line",
-    color: { red: 250, green: 250, blue: 250 },
-    textures: "https://s3-us-west-1.amazonaws.com/hifi-content/clement/production/chess/board_cherry.jpg",
+    color: { red: 0, green: 120, blue: 250 },
+    textures: "https://hifi-public.s3.amazonaws.com/alan/Particles/Particle-Sprite-Smoke-1.png",
     position: startPosition,
     dimensions: { x: 10, y: 10, z: 10 }
 });
@@ -130,15 +122,15 @@ var offsetActionID = Entities.addAction("offset", ballID, {
 });
 
 // now the other items have been created the references can be added to the userData
-var dataProps = Entities.getEntityProperties(stickID);
-if (dataProps.userData) {
+var stickProps = Entities.getEntityProperties(stickID);
+if (stickProps.userData) {
     try {
-        var data = JSON.parse(dataProps.userData);
-        data.actionID = offsetActionID;
-        data.ballID = ballID;
-        data.lineID = lineID;
+        var stickData = JSON.parse(stickProps.userData);
+        stickData.actionID = offsetActionID;
+        stickData.ballID = ballID;
+        stickData.lineID = lineID;
         Entities.editEntity(stickID, {
-            userData: JSON.stringify(data)
+            userData: JSON.stringify(stickData)
         });
     } catch (e) {
     }
