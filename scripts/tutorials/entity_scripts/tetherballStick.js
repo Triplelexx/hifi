@@ -8,7 +8,7 @@
 // Created by Triplelexx on 17/03/04
 // Copyright 2017 High Fidelity, Inc.
 //
-// Entity script for an eqippable stick with a tethered ball
+// Entity script for an equippable stick with a tethered ball
 //
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
