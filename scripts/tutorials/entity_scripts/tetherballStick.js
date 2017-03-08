@@ -18,7 +18,7 @@
 
     var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
     var REPOSITION_INTERVAL = 30; // time in ms
-    var ENTITY_CHECK_INTERVAL = 5000;
+    var ENTITY_CHECK_INTERVAL = 5;// time sec
     var LINE_WIDTH = 0.02;
     var BALL_SIZE = 0.175;
     var BALL_DAMPING = 0.3;
@@ -43,7 +43,7 @@
     tetherballStick.prototype = {
         equipped: false,
         lastReposition: 0,
-        lastEntityCheck: 0,
+        lastCheckForEntity: 0,
         lineLength: 0,
         userID: NULL_UUID,
         ballID: NULL_UUID,

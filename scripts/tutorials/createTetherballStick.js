@@ -27,7 +27,7 @@ var STICK_PROPERTIES = {
     name: "tetherballStick Stick",
     modelURL: STICK_MODEL_URL,
     position: startPosition,
-    rotation: Quat.fromPitchYawRollDegrees(0.0, -90.0, 0.0),
+    rotation: MyAvatar.orientation,
     dimensions: {
         x: 0.0651,
         y: 0.0651,
