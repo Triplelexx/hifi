@@ -1,7 +1,7 @@
 "use strict";
 
 /*jslint nomen: true, vars: true, plusplus: true*/
-/*global Entities, Vec3, MyAvatar, Controller, Camera, Script, print*/
+/*global Entities, Vec3, MyAvatar, AvatarList, Controller, Camera, Script, print*/
 
 // tetherballStick.js
 //
@@ -18,7 +18,7 @@
 
     var NULL_UUID = "{00000000-0000-0000-0000-000000000000}";
     var REPOSITION_INTERVAL = 30; // time in ms
-    var ENTITY_CHECK_INTERVAL = 5;// time sec
+    var ENTITY_CHECK_INTERVAL = 5; // time in sec
     var LINE_WIDTH = 0.02;
     var BALL_SIZE = 0.175;
     var BALL_DAMPING = 0.3;
@@ -34,6 +34,7 @@
     var COLLISION_SOUND_URL = "http://public.highfidelity.io/sounds/Footsteps/FootstepW3Left-12db.wav";
     var EQUIP_SOUND_URL = "http://hifi-public.s3.amazonaws.com/sounds/color_busters/powerup.wav";
     var EQUIP_SOUND_VOLUME = 0.2;
+    var AVATAR_CHECK_RANGE = 5; // in meters
 
     tetherballStick = function() {
         _this = this;
@@ -41,7 +42,7 @@
     };
 
     tetherballStick.prototype = {
-        equipped: false,
+        isEquipped: false,
         lastReposition: 0,
         lastCheckForEntity: 0,
         lineLength: 0,
@@ -63,20 +64,41 @@
 
         update: function(dt) {
             // _this during update due to loss of scope
+            var stickProps = Entities.getEntityProperties(_this.entityID);
             if (_this.lastCheckForEntity >= ENTITY_CHECK_INTERVAL) {
-                _this.checkForEntities();
-                _this.lastCheckForEntity = 0;
+                // I only want the closest client to be in charge of creating objects.
+                // the AvatarList also contains a null representing MyAvatar,
+                // a new array is created to start with containing the proper UUID 
+                var avatarList = AvatarList.getAvatarIdentifiers()
+                    .filter(Boolean) // remove the null
+                    .concat(MyAvatar.sessionUUID); // add the ID
+
+                var closestAvatarID = undefined;
+                var closestAvatarDistance = AVATAR_CHECK_RANGE;
+                avatarList.forEach(function(avatarID) {
+                    var avatar = AvatarList.getAvatar(avatarID);
+                    var distFrom = Vec3.distance(avatar.position, stickProps.position);
+                    if (distFrom < closestAvatarDistance && distFrom > 0) {
+                        closestAvatarDistance = distFrom;
+                        closestAvatarID = avatarID;
+                    }
+                });
+
+                var isAuthAvatar = closestAvatarID == MyAvatar.sessionUUID;
+                if (isAuthAvatar) {
+                    _this.checkForEntities();
+                    _this.lastCheckForEntity = 0;
+                }    
             } else {
                 _this.lastCheckForEntity += dt;
             }
 
             var isUser = _this.userID == MyAvatar.sessionUUID; // only the user should control the line
-            if (_this.equipped && _this.lineLength < ACTION_DISTANCE && isUser) { // increase line after startEquip
-                _this.lineLength += ACTION_DISTANCE_INCREMENT;
-            } else if (!_this.equipped && _this.lineLength > 0 && isUser) { // reduce lineLength after releaseEquip
-                _this.lineLength -= ACTION_DISTANCE_INCREMENT;
-            } else if (!_this.equipped && _this.lineLength <= 0 && isUser) {
-                _this.deleteLine();
+            if (_this.isEquipped && _this.lineLength < ACTION_DISTANCE && isUser) { // increase line after startEquip
+                //_this.lineLength += ACTION_DISTANCE_INCREMENT;
+            } else if (!_this.isEquipped && _this.lineLength > 0 && isUser) { // reduce lineLength after releaseEquip
+                //_this.lineLength -= ACTION_DISTANCE_INCREMENT;
+            } else if (!_this.isEquipped && _this.lineLength <= 0 && isUser) {
                 _this.userID = NULL_UUID;
             }
         },
@@ -101,16 +123,24 @@
         },
 
         startEquip: function(id, params) {
-            var hand = params[0];
-            Controller.triggerShortHapticPulse(1, hand);
-            this.equipped = true;
-            this.userID = MyAvatar.sessionUUID;
-            this.createLine();
-            this.playEquipSound();
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            // set variables from data in case someone else created the components
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                this.userID = MyAvatar.sessionUUID;
+                this.ballID = stickData.ballID;
+                this.actionID = stickData.actionID;
+                var hand = params[0];
+                Controller.triggerShortHapticPulse(1, hand);
+                this.createLine();
+                this.playEquipSound();
+                this.isEquipped = true;
+            } catch (e) {
+            }
         },
 
         continueEquip: function(id, params) {
-            if (!this.equipped || !this.hasRequiredComponents()) {
+            if (!this.isEquipped || !this.hasRequiredComponents()) {
                 return;
             }
             // updating every tick seems excessive, so repositioning is throttled here
@@ -121,9 +151,10 @@
         },
 
         releaseEquip: function(id, params) {
-            this.equipped = false;
-            var stickProps = Entities.getEntityProperties(this.entityID);
+            this.isEquipped = false;
+            this.userID = NULL_UUID;
             this.playEquipSound();
+            this.deleteLine();
         },
 
         createLine: function() {
@@ -159,14 +190,7 @@
 
         createBall: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
-            // don't make a ball if we have an ID
-            try {
-                var data = JSON.parse(stickProps.userData);
-                if (data.ballID != undefined) {
-                    return;
-                }
-            } catch (e) { }
-            
+
             this.ballID = Entities.addEntity({
                 type: "Model",
                 modelURL: "http://hifi-content.s3.amazonaws.com/Examples%20Content/production/marblecollection/Star.fbx",
@@ -190,37 +214,44 @@
                 density: BALL_DENSITY,
                 restitution: BALL_RESTITUTION,
                 dynamic: true,
-                collidesWith: "static,dynamic,otherAvatar,"
+                collidesWith: "static,dynamic,otherAvatar,",
+                grabbable: false,
+                userData: JSON.stringify({
+                    grabbableKey: {
+                        grabbable: false
+                    }
+                })
             });
 
             // add reference to userData
             try {
                 var stickData = JSON.parse(stickProps.userData);
                 stickData.ballID = this.ballID;
-                Entities.editEntity(stickID, {
+                Entities.editEntity(this.entityID, {
                     userData: JSON.stringify(stickData)
                 });
-            } catch (e) {}
+            } catch (e) {   
+            }
         },
 
         hasBall: function() {
-            var ballProps = Entities.getEntityProperties(this.ballID);
-            return ballProps.name == BALL_NAME;
+            // validate the userData to handle unexpected item deletion
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            try {
+                var data = JSON.parse(stickProps.userData);
+                var ballProps = Entities.getEntityProperties(data.ballID);
+                return ballProps.name == BALL_NAME;
+            } catch (e) {
+                return false;
+            }
         },
 
         createAction: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
-            // don't make an action if we have an ID
-            try {
-                var data = JSON.parse(stickProps.userData);
-                if (data.actionID != actionID) {
-                    return;
-                }
-            } catch (e) { }
-            
-            var actionID = Entities.addAction("offset", this.ballID, {
+
+            this.actionID = Entities.addAction("offset", this.ballID, {
                 pointToOffsetFrom: stickProps.position,
-                linearDistance: 0,
+                linearDistance: ACTION_DISTANCE,
                 tag: ACTION_TAG,
                 linearTimeScale: ACTION_TIMESCALE
             });
@@ -229,15 +260,23 @@
             try {
                 var stickData = JSON.parse(stickProps.userData);
                 stickData.actionID = this.actionID;
-                Entities.editEntity(stickID, {
+                Entities.editEntity(this.entityID, {
                     userData: JSON.stringify(stickData)
                 });
-            } catch (e) {}
+            } catch (e) {            
+            }
         },
 
         hasAction: function() {
-            var actionProps = Entities.getActionArguments(this.ballID, this.actionID);
-            return actionProps.tag == ACTION_TAG;
+            // validate the userData to handle unexpected item deletion
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                var actionProps = Entities.getActionArguments(stickData.ballID, stickData.actionID);
+                return actionProps.tag == ACTION_TAG;
+            } catch (e) {
+                return false;
+            }
         },
 
         hasRequiredComponents: function() {
@@ -249,7 +288,8 @@
 
             Entities.updateAction(this.ballID, this.actionID, {
                 pointToOffsetFrom: stickProps.position,
-                linearDistance: this.lineLength,
+                linearDistance: ACTION_DISTANCE,
+                tag: ACTION_TAG,
                 linearTimeScale: ACTION_TIMESCALE
             });
 
