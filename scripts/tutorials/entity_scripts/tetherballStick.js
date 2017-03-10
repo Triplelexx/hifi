@@ -21,13 +21,13 @@
     var ENTITY_CHECK_INTERVAL = 5; // time in sec
     var LINE_WIDTH = 0.02;
     var BALL_SIZE = 0.175;
-    var BALL_DAMPING = 0.3;
-    var BALL_ANGULAR_DAMPING = 0.1;
+    var BALL_DAMPING = 0.5;
+    var BALL_ANGULAR_DAMPING = 0.5;
     var BALL_RESTITUTION = 0.4;
-    var BALL_DENSITY = 300;
-    var ACTION_DISTANCE = 0.5;
+    var BALL_DENSITY = 5000;
+    var ACTION_DISTANCE = 0.25;
     var ACTION_DISTANCE_INCREMENT = 0.005;
-    var ACTION_TIMESCALE = 0.01;
+    var ACTION_TIMESCALE = 0.025;
     var ACTION_TAG = "tetherballStick Action";
     var BALL_NAME = "tetherballStick Ball";
     var LINE_NAME = "tetherballStick Line";
@@ -92,15 +92,17 @@
             } else {
                 _this.lastCheckForEntity += dt;
             }
-
+            
+            /* Was shrinking and growing line, decided against enabling it
             var isUser = _this.userID == MyAvatar.sessionUUID; // only the user should control the line
             if (_this.isEquipped && _this.lineLength < ACTION_DISTANCE && isUser) { // increase line after startEquip
-                //_this.lineLength += ACTION_DISTANCE_INCREMENT;
+                _this.lineLength += ACTION_DISTANCE_INCREMENT;
             } else if (!_this.isEquipped && _this.lineLength > 0 && isUser) { // reduce lineLength after releaseEquip
-                //_this.lineLength -= ACTION_DISTANCE_INCREMENT;
+                _this.lineLength -= ACTION_DISTANCE_INCREMENT;
             } else if (!_this.isEquipped && _this.lineLength <= 0 && isUser) {
                 _this.userID = NULL_UUID;
             }
+            */
         },
 
         checkForEntities: function() {
