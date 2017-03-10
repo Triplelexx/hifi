@@ -296,14 +296,15 @@
             });
 
             var ballProps = Entities.getEntityProperties(this.ballID);
+            var cameraQuat = Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z);
             var linePoints = [];
             var normals = [];
             var strokeWidths = [];
             linePoints.push(Vec3.ZERO);
-            normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
+            normals.push(cameraQuat);
             strokeWidths.push(LINE_WIDTH);
             linePoints.push(Vec3.subtract(ballProps.position, stickProps.position));
-            normals.push(Vec3.multiplyQbyV(Camera.getOrientation(), Vec3.UNIT_NEG_Z));
+            normals.push(cameraQuat);
             strokeWidths.push(LINE_WIDTH);
 
             var lineProps = Entities.getEntityProperties(this.lineID);
