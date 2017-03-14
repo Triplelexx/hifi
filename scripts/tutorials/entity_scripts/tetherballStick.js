@@ -34,6 +34,7 @@
     var COLLISION_SOUND_URL = "http://public.highfidelity.io/sounds/Footsteps/FootstepW3Left-12db.wav";
     var EQUIP_SOUND_URL = "http://hifi-public.s3.amazonaws.com/sounds/color_busters/powerup.wav";
     var EQUIP_SOUND_VOLUME = 0.2;
+    var USE_EQUIP_SOUND = false;
     var AVATAR_CHECK_RANGE = 5; // in meters
     var TELEPORT_THRESHOLD = 2; // in meters
 
@@ -56,7 +57,9 @@
 
         preload: function(entityID) {
             this.entityID = entityID;
-            this.EQUIP_SOUND = SoundCache.getSound(EQUIP_SOUND_URL);
+            if (USE_EQUIP_SOUND) {
+                this.EQUIP_SOUND = SoundCache.getSound(EQUIP_SOUND_URL);
+            }    
             Script.update.connect(this.update);
         },
 
@@ -137,7 +140,9 @@
                 var hand = params[0];
                 Controller.triggerShortHapticPulse(1, hand);
                 this.createLine();
-                this.playEquipSound();
+                if (USE_EQUIP_SOUND) {
+                    this.playEquipSound();
+                }    
                 this.isEquipped = true;
             } catch (e) {
             }
@@ -161,7 +166,9 @@
         releaseEquip: function(id, params) {
             this.isEquipped = false;
             this.userID = NULL_UUID;
-            this.playEquipSound();
+            if (USE_EQUIP_SOUND) {
+                this.playEquipSound();
+            }
             this.deleteLine();
         },
 
