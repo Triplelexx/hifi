@@ -35,6 +35,7 @@
     var EQUIP_SOUND_URL = "http://hifi-public.s3.amazonaws.com/sounds/color_busters/powerup.wav";
     var EQUIP_SOUND_VOLUME = 0.2;
     var AVATAR_CHECK_RANGE = 5; // in meters
+    var TELEPORT_THRESHOLD = 2; // in meters
 
     tetherballStick = function() {
         _this = this;
@@ -44,6 +45,7 @@
     tetherballStick.prototype = {
         isEquipped: false,
         lastReposition: 0,
+        lastAvatarPosition: Vec3.ZERO,
         lastCheckForEntity: 0,
         lineLength: 0,
         userID: NULL_UUID,
@@ -88,7 +90,7 @@
                 if (isAuthAvatar) {
                     _this.checkForEntities();
                     _this.lastCheckForEntity = 0;
-                }    
+                }
             } else {
                 _this.lastCheckForEntity += dt;
             }
@@ -150,6 +152,10 @@
                 this.lastReposition = Date.now();
                 this.repositionAction();
             }
+            if (Vec3.distance(lastAvatarPosition, MyAvatar.position) > TELEPORT_THRESHOLD) {
+                settleBall();
+            }
+            lastAvatarPosition = MyAvatar.position;
         },
 
         releaseEquip: function(id, params) {
@@ -232,7 +238,7 @@
                 Entities.editEntity(this.entityID, {
                     userData: JSON.stringify(stickData)
                 });
-            } catch (e) {   
+            } catch (e) {
             }
         },
 
@@ -246,6 +252,12 @@
             } catch (e) {
                 return false;
             }
+        },
+
+        settleBall: function() {
+            Entities.editEntity(this.ballID, {
+                velocity: Vec3.ZERO
+            });
         },
 
         createAction: function() {
