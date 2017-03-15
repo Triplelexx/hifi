@@ -1,8 +1,8 @@
 "use strict";
-
-/*jslint nomen: true, vars: true, plusplus: true*/
-/*global Entities, Vec3, MyAvatar, AvatarList, Controller, Camera, Script, print*/
-
+/* jslint vars: true, plusplus: true, forin: true*/
+/* globals Tablet, Script, AvatarList, Users, Entities, MyAvatar, Camera, Overlays, Vec3, Quat, Controller, print, getControllerWorldLocation */
+/* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
+//
 // tetherballStick.js
 //
 // Created by Triplelexx on 17/03/04
@@ -26,17 +26,17 @@
     var BALL_RESTITUTION = 0.4;
     var BALL_DENSITY = 1000;
     var ACTION_DISTANCE = 0.25;
-    var ACTION_DISTANCE_INCREMENT = 0.005;
     var ACTION_TIMESCALE = 0.025;
-    var ACTION_TAG = "tetherballStick Action";
-    var BALL_NAME = "tetherballStick Ball";
-    var LINE_NAME = "tetherballStick Line";
+    var ACTION_TAG = "TetherballStick Action";
+    var BALL_NAME = "TetherballStick Ball";
+    var LINE_NAME = "TetherballStick Line";
     var COLLISION_SOUND_URL = "http://public.highfidelity.io/sounds/Footsteps/FootstepW3Left-12db.wav";
-    var EQUIP_SOUND_URL = "http://hifi-public.s3.amazonaws.com/sounds/color_busters/powerup.wav";
-    var EQUIP_SOUND_VOLUME = 0.2;
-    var USE_EQUIP_SOUND = false;
+    var INTERACT_SOUND_URL = "http://hifi-public.s3.amazonaws.com/sounds/color_busters/powerup.wav";
+    var INTERACT_SOUND_VOLUME = 0.2;
+    var USE_INTERACT_SOUND = false;
     var AVATAR_CHECK_RANGE = 5; // in meters
-    var TELEPORT_THRESHOLD = 2; // in meters
+    var TELEPORT_THRESHOLD = 0.75; // in meters
+    var TIP_OFFSET = 0.15;
 
     tetherballStick = function() {
         _this = this;
@@ -44,22 +44,22 @@
     };
 
     tetherballStick.prototype = {
-        isEquipped: false,
+        isHeld: false,
         lastReposition: 0,
         lastAvatarPosition: Vec3.ZERO,
-        lastCheckForEntity: 0,
-        lineLength: 0,
+        lastCheckForEntities: 0,
+        ownerID: NULL_UUID,
         userID: NULL_UUID,
         ballID: NULL_UUID,
         lineID: NULL_UUID,
         actionID: NULL_UUID,
-        EQUIP_SOUND: undefined,
+        INTERACT_SOUND: undefined,
 
         preload: function(entityID) {
             this.entityID = entityID;
-            if (USE_EQUIP_SOUND) {
-                this.EQUIP_SOUND = SoundCache.getSound(EQUIP_SOUND_URL);
-            }    
+            if (USE_INTERACT_SOUND) {
+                this.INTERACT_SOUND = SoundCache.getSound(INTERACT_SOUND_URL);
+            }
             Script.update.connect(this.update);
         },
 
@@ -70,44 +70,75 @@
         update: function(dt) {
             // _this during update due to loss of scope
             var stickProps = Entities.getEntityProperties(_this.entityID);
-            if (_this.lastCheckForEntity >= ENTITY_CHECK_INTERVAL) {
-                // I only want the closest client to be in charge of creating objects.
-                // the AvatarList also contains a null representing MyAvatar,
-                // a new array is created to start with containing the proper UUID 
-                var avatarList = AvatarList.getAvatarIdentifiers()
-                    .filter(Boolean) // remove the null
-                    .concat(MyAvatar.sessionUUID); // add the ID
 
-                var closestAvatarID = undefined;
-                var closestAvatarDistance = AVATAR_CHECK_RANGE;
-                avatarList.forEach(function(avatarID) {
-                    var avatar = AvatarList.getAvatar(avatarID);
-                    var distFrom = Vec3.distance(avatar.position, stickProps.position);
-                    if (distFrom < closestAvatarDistance && distFrom > 0) {
-                        closestAvatarDistance = distFrom;
-                        closestAvatarID = avatarID;
-                    }
-                });
+            if (_this.lastCheckForEntities >= ENTITY_CHECK_INTERVAL) {
+                _this.lastCheckForEntities = 0;
+                // everyone will be running this update loop
+                // the only action is to increment the timer till ENTITY_CHECK_INTERVAL
+                // when that is reached the userdata ownerID is simply validated by everyone
+                // if it's invalid call setNewOwner, to set a new valid user
+                if (!_this.checkForOwner()) {
+                    return;
+                }
 
-                var isAuthAvatar = closestAvatarID == MyAvatar.sessionUUID;
-                if (isAuthAvatar) {
+                // only one person should ever be running this far
+                if (_this.ownerID == MyAvatar.sessionUUID) {
                     _this.checkForEntities();
-                    _this.lastCheckForEntity = 0;
                 }
             } else {
-                _this.lastCheckForEntity += dt;
+                _this.lastCheckForEntities += dt;
             }
-            
-            /* Was shrinking and growing line, decided against enabling it
-            var isUser = _this.userID == MyAvatar.sessionUUID; // only the user should control the line
-            if (_this.isEquipped && _this.lineLength < ACTION_DISTANCE && isUser) { // increase line after startEquip
-                _this.lineLength += ACTION_DISTANCE_INCREMENT;
-            } else if (!_this.isEquipped && _this.lineLength > 0 && isUser) { // reduce lineLength after releaseEquip
-                _this.lineLength -= ACTION_DISTANCE_INCREMENT;
-            } else if (!_this.isEquipped && _this.lineLength <= 0 && isUser) {
-                _this.userID = NULL_UUID;
+        },
+
+        checkForOwner: function() {
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                var owner = AvatarManager.getAvatar(stickData.ownerID);
+                if (owner.sessionUUID !== undefined) {
+                    this.ownerID = owner.sessionUUID;
+                    return true;
+                } else {
+                    // UUID is invalid
+                    this.setNewOwner();
+                    return false;
+                }
+            } catch (e) {
+                // all other errors
+                this.setNewOwner();
+                return false;
             }
-            */
+        },
+
+        setNewOwner: function() {
+            var stickProps = Entities.getEntityProperties(this.entityID);
+            // I only want the closest client to be in charge of creating objects.
+            // the AvatarList also contains a null representing MyAvatar,
+            // a new array is created to start with containing the proper UUID 
+            var avatarList = AvatarList.getAvatarIdentifiers()
+                .filter(Boolean) // remove the null
+                .concat(MyAvatar.sessionUUID); // add the ID
+
+            var closestAvatarID = undefined;
+            var closestAvatarDistance = AVATAR_CHECK_RANGE;
+            avatarList.forEach(function(avatarID) {
+                var avatar = AvatarList.getAvatar(avatarID);
+                var distFrom = Vec3.distance(avatar.position, stickProps.position);
+                if (distFrom < closestAvatarDistance) {
+                    closestAvatarDistance = distFrom;
+                    closestAvatarID = avatarID;
+                }
+            });
+
+            // add reference to userData
+            try {
+                var stickData = JSON.parse(stickProps.userData);
+                stickData.ownerID = closestAvatarID;
+                Entities.editEntity(this.entityID, {
+                    userData: JSON.stringify(stickData)
+                });
+            } catch (e) {
+            }
         },
 
         checkForEntities: function() {
@@ -119,17 +150,24 @@
             }
         },
 
-        playEquipSound: function() {
+        playInteractionSound: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
-            var EQUIP_SOUND_OPTIONS = {
-                volume: EQUIP_SOUND_VOLUME,
+            var INTERACT_SOUND_OPTIONS = {
+                volume: INTERACT_SOUND_VOLUME,
                 loop: false,
                 position: stickProps.position
             };
-            Audio.playSound(this.EQUIP_SOUND, EQUIP_SOUND_OPTIONS);
+            Audio.playSound(this.INTERACT_SOUND, INTERACT_SOUND_OPTIONS);
         },
 
-        startEquip: function(id, params) {
+        getTipPosition: function(position, rotation) {
+            var upVector = Quat.getFront(rotation);
+            var upOffset = Vec3.multiply(upVector, TIP_OFFSET);
+            var tipPosition = Vec3.sum(position, upOffset);
+            return tipPosition;
+        },
+
+        startNearGrab: function(id, params) {
             var stickProps = Entities.getEntityProperties(this.entityID);
             // set variables from data in case someone else created the components
             try {
@@ -137,19 +175,27 @@
                 this.userID = MyAvatar.sessionUUID;
                 this.ballID = stickData.ballID;
                 this.actionID = stickData.actionID;
-                var hand = params[0];
-                Controller.triggerShortHapticPulse(1, hand);
+                //var hand = params[0];
+                //Controller.triggerShortHapticPulse(1, hand);
                 this.createLine();
-                if (USE_EQUIP_SOUND) {
-                    this.playEquipSound();
-                }    
-                this.isEquipped = true;
-            } catch (e) {
-            }
+                if (USE_INTERACT_SOUND) {
+                    this.playInteractionSound();
+                }
+                this.isHeld = true;
+            } catch (e) { }
         },
 
-        continueEquip: function(id, params) {
-            if (!this.isEquipped || !this.hasRequiredComponents()) {
+        releaseGrab: function(id, params) {
+            this.isHeld = false;
+            this.userID = NULL_UUID;
+            if (USE_INTERACT_SOUND) {
+                this.playInteractionSound();
+            }
+            this.deleteLine();
+        },
+
+        continueNearGrab: function(id, params) {
+            if (!this.isHeld || !this.hasRequiredComponents()) {
                 return;
             }
             // updating every tick seems excessive, so repositioning is throttled here
@@ -157,19 +203,10 @@
                 this.lastReposition = Date.now();
                 this.repositionAction();
             }
-            if (Vec3.distance(lastAvatarPosition, MyAvatar.position) > TELEPORT_THRESHOLD) {
-                settleBall();
+            if (Vec3.distance(this.lastAvatarPosition, MyAvatar.position) > TELEPORT_THRESHOLD) {
+                this.settleBall();
             }
-            lastAvatarPosition = MyAvatar.position;
-        },
-
-        releaseEquip: function(id, params) {
-            this.isEquipped = false;
-            this.userID = NULL_UUID;
-            if (USE_EQUIP_SOUND) {
-                this.playEquipSound();
-            }
-            this.deleteLine();
+            this.lastAvatarPosition = MyAvatar.position;
         },
 
         createLine: function() {
@@ -190,7 +227,6 @@
                     z: 10
                 }
             });
-            this.lineLength = 0;
         },
 
         deleteLine: function() {
@@ -230,7 +266,6 @@
                 restitution: BALL_RESTITUTION,
                 dynamic: true,
                 collidesWith: "static,dynamic,otherAvatar,",
-                grabbable: false,
                 userData: JSON.stringify({
                     grabbableKey: {
                         grabbable: false
@@ -245,8 +280,7 @@
                 Entities.editEntity(this.entityID, {
                     userData: JSON.stringify(stickData)
                 });
-            } catch (e) {
-            }
+            } catch (e) {}
         },
 
         hasBall: function() {
@@ -263,7 +297,8 @@
 
         settleBall: function() {
             Entities.editEntity(this.ballID, {
-                velocity: Vec3.ZERO
+                velocity: Vec3.ZERO,
+                angularVelocity: Vec3.ZERO
             });
         },
 
@@ -284,8 +319,7 @@
                 Entities.editEntity(this.entityID, {
                     userData: JSON.stringify(stickData)
                 });
-            } catch (e) {            
-            }
+            } catch (e) {}
         },
 
         hasAction: function() {
@@ -306,9 +340,10 @@
 
         repositionAction: function() {
             var stickProps = Entities.getEntityProperties(this.entityID);
+            var tipPosition = this.getTipPosition(stickProps.position, stickProps.rotation);
 
             Entities.updateAction(this.ballID, this.actionID, {
-                pointToOffsetFrom: stickProps.position,
+                pointToOffsetFrom: tipPosition,
                 linearDistance: ACTION_DISTANCE,
                 tag: ACTION_TAG,
                 linearTimeScale: ACTION_TIMESCALE
@@ -319,10 +354,10 @@
             var linePoints = [];
             var normals = [];
             var strokeWidths = [];
-            linePoints.push(Vec3.ZERO);
+            linePoints.push(this.getTipPosition(Vec3.ZERO, stickProps.rotation));
             normals.push(cameraQuat);
             strokeWidths.push(LINE_WIDTH);
-            linePoints.push(Vec3.subtract(ballProps.position, stickProps.position));
+            linePoints.push(Vec3.subtract(ballProps.position, tipPosition));
             normals.push(cameraQuat);
             strokeWidths.push(LINE_WIDTH);
 
@@ -331,7 +366,7 @@
                 linePoints: linePoints,
                 normals: normals,
                 strokeWidths: strokeWidths,
-                position: stickProps.position,
+                position: tipPosition,
                 lifetime: Math.round(lineProps.age + 2)
             });
         }

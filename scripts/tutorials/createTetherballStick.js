@@ -1,8 +1,8 @@
 "use strict";
-
-/*jslint nomen: true, vars: true, plusplus: true*/
-/*global Entities, Script, Quat, Vec3, Camera, MyAvatar, print*/
-
+/* jslint vars: true, plusplus: true, forin: true*/
+/* globals Tablet, Script, AvatarList, Users, Entities, MyAvatar, Camera, Overlays, Vec3, Quat, Controller, print, getControllerWorldLocation */
+/* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
+//
 // createTetherballStick.js
 //
 // Created by Triplelexx on 17/03/04
@@ -24,7 +24,7 @@ var startPosition = Vec3.sum(MyAvatar.getRightPalmPosition(), Vec3.multiply(1, Q
 
 var STICK_PROPERTIES = {
     type: 'Model',
-    name: "tetherballStick Stick",
+    name: "TetherballStick Stick",
     modelURL: STICK_MODEL_URL,
     position: startPosition,
     rotation: MyAvatar.orientation,
@@ -40,36 +40,31 @@ var STICK_PROPERTIES = {
         blue: 20
     },
     shapeType: 'box',
-    dynamic: false,
     lifetime: 3600,
     userData: JSON.stringify({
         grabbableKey: {
+            grabbable: true,
+            spatialKey: {
+                rightRelativePosition: {
+                    x: 0.05,
+                    y: 0,
+                    z: 0
+                },
+                leftRelativePosition: {
+                    x: -0.05,
+                    y: 0,
+                    z: 0
+                },
+                relativeRotation: {
+                    x: 0.4999999701976776,
+                    y: 0.4999999701976776,
+                    z: -0.4999999701976776,
+                    w: 0.4999999701976776
+                }
+            },
             invertSolidWhileHeld: true
         },
-        wearable: {
-            joints: {
-                RightHand: [{
-                    x: 0.2,
-                    y: 0.05,
-                    z: -0.05
-                }, {
-                    x: 0.7071067811865476,
-                    y: 0.0,
-                    z: -0.7071067811865475,
-                    w: 0.05
-                }],
-                LeftHand: [{
-                    x: -0.2,
-                    y: 0.05,
-                    z: -0.05
-                }, {
-                    x: 0.7071067811865476,
-                    y: 0.0,
-                    z: 0.7071067811865475,
-                    w: 0.0
-                }]
-            }
-        }
+        ownerID: MyAvatar.sessionUUID
     })
 };
 
