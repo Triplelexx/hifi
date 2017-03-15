@@ -175,10 +175,10 @@
                 this.userID = MyAvatar.sessionUUID;
                 this.ballID = stickData.ballID;
                 this.actionID = stickData.actionID;
-                //var hand = params[0];
-                //Controller.triggerShortHapticPulse(1, hand);
                 this.createLine();
                 if (USE_INTERACT_SOUND) {
+                    var hand = params[0];
+                    Controller.triggerShortHapticPulse(1, hand);
                     this.playInteractionSound();
                 }
                 this.isHeld = true;
