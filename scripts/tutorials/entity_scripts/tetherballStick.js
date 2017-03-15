@@ -161,9 +161,9 @@
         },
 
         getTipPosition: function(position, rotation) {
-            var upVector = Quat.getFront(rotation);
-            var upOffset = Vec3.multiply(upVector, TIP_OFFSET);
-            var tipPosition = Vec3.sum(position, upOffset);
+            var frontVec = Quat.getFront(rotation);
+            var frontOffset = Vec3.multiply(frontVec, TIP_OFFSET);
+            var tipPosition = Vec3.sum(position, frontOffset);
             return tipPosition;
         },
 
