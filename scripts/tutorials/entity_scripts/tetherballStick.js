@@ -36,7 +36,7 @@
     var USE_INTERACT_SOUND = false;
     var AVATAR_CHECK_RANGE = 5; // in meters
     var TELEPORT_THRESHOLD = 0.75; // in meters
-    var TIP_OFFSET = 0.15;
+    var TIP_OFFSET = 0.26;
 
     tetherballStick = function() {
         _this = this;
@@ -354,7 +354,7 @@
             var linePoints = [];
             var normals = [];
             var strokeWidths = [];
-            linePoints.push(this.getTipPosition(Vec3.ZERO, stickProps.rotation));
+            linePoints.push(Vec3.ZERO);
             normals.push(cameraQuat);
             strokeWidths.push(LINE_WIDTH);
             linePoints.push(Vec3.subtract(ballProps.position, tipPosition));
