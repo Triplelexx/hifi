@@ -34,18 +34,18 @@
     FootStepCollider.prototype = {
         footstepAudioInjector: undefined,
         footstepSounds: [],
+        avatarScale: 1,
         timeSinceLastCollision: 0,
         preload: function(entityID) {
-            if (MyAvatar.sessionUUID != Entities.getEntityProperties(this.entityID, ["parentID"]).parentID){
+            if (MyAvatar.sessionUUID != Entities.getEntityProperties(entityID, ["parentID"]).parentID) {
                 return;
             }
             this.entityID = entityID;
             this.timeSinceLastCollision = Date.now();
-        },
-        unload: function() {
+            this.avatarScale = MyAvatar.scale;
         },
         collisionWithEntity: function(myEntityID, collidingEntityID, collisionInfo) {
-            if (MyAvatar.sessionUUID != Entities.getEntityProperties(this.entityID, ["parentID"]).parentID){
+            if (MyAvatar.sessionUUID != Entities.getEntityProperties(this.entityID, ["parentID"]).parentID) {
                 return;
             }
             if (!(Date.now() - this.timeSinceLastCollision > COLLISION_COOLDOWN_TIME)) {
@@ -53,6 +53,7 @@
             }
             if (collisionInfo.type == 0) {
                 this.checkCustomFootsteps(collidingEntityID);
+                this.checkAvatarScaleChanged();
             }
             if (this.footstepAudioInjector !== undefined && this.footstepAudioInjector.isPlaying()) {
                 this.footstepAudioInjector.stop();
@@ -61,7 +62,7 @@
                 if (this.footstepSounds[0].downloaded) {
                     this.footstepAudioInjector = Audio.playSound(this.footstepSounds[0], {
                         position: MyAvatar.position,
-                        volume: 0.5 * MyAvatar.scale,
+                        volume: clamp((MyAvatar.scale / 7.5) * Vec3.length(MyAvatar.velocity), 0.05, 1),
                         loop: false
                     });
                 }
@@ -72,7 +73,10 @@
             var footstepEntityName = Entities.getEntityProperties(this.entityID, ["name"]).name;
             if (footstepEntityName == "footstepLGenerator") {
                 var customFootstepLSoundFiles = getEntityCustomData("footstepLSoundFiles", collidingEntityID, undefined);
-                if (customFootstepLSoundFiles.length > 0) {
+                if (customFootstepLSoundFiles !== undefined) {
+                    if (customFootstepLSoundFiles.length == 0) {
+                        return;
+                    }
                     for (var i = 0; i < customFootstepLSoundFiles.length; i++) {
                         this.footstepSounds.push(SoundCache.getSound(customFootstepLSoundFiles[i]));
                     }
@@ -83,7 +87,10 @@
                 }     
             } else {
                 var customFootstepRSoundFiles = getEntityCustomData("footstepRSoundFiles", collidingEntityID, undefined);
-                if (customFootstepRSoundFiles.length > 0) {
+                if (customFootstepRSoundFiles !== undefined) {
+                    if (customFootstepRSoundFiles.length == 0) {
+                        return;
+                    }
                     for (var i = 0; i < customFootstepRSoundFiles.length; i++) {
                         this.footstepSounds.push(SoundCache.getSound(customFootstepRSoundFiles[i]));
                     }
@@ -93,6 +100,31 @@
                     }
                 }
             }
+        },
+        checkAvatarScaleChanged: function() {
+            if (this.avatarScale == MyAvatar.scale) {
+                return;
+            }
+            var footstepEntityName = Entities.getEntityProperties(this.entityID, ["name"]).name;
+            var footJointIndex = 0;
+            if (footstepEntityName == "footstepLGenerator") {
+                footJointIndex = MyAvatar.getJointIndex("LeftFoot");
+            } else {
+                footJointIndex = MyAvatar.getJointIndex("RightFoot");
+            }
+            var colliderSize = 0.2 * MyAvatar.scale;
+            var footPosition = MyAvatar.getAbsoluteJointTranslationInObjectFrame(footJointIndex);
+            var footWorldPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, footPosition));
+            var footOffsetPosition = Vec3.sum(footWorldPosition, { x: 0.0, y: -colliderSize, z: 0.0 });
+            Entities.editEntity(this.entityID, {
+                position: footOffsetPosition,
+                dimensions: {
+                    x: colliderSize,
+                    y: colliderSize,
+                    z: colliderSize
+                }
+            });
+            this.avatarScale = MyAvatar.scale;
         }
     };
     return new FootStepCollider();

@@ -13,7 +13,7 @@
 //
 /* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
 
-(function() { // BEGIN LOCAL_SCOPE
+(function() {
 var SCRIPT_URL = Script.resolvePath("footstepCollider.js") + "?v=" + Date.now();
 var colliderSize = 0.2 * MyAvatar.scale;
 var footLJointIndex = MyAvatar.getJointIndex("LeftFoot");
@@ -28,7 +28,7 @@ var footROffsetPosition = Vec3.sum(footRWorldPosition, { x: 0.0, y: -colliderSiz
 var footstepLGenerator = Entities.addEntity({
     type: "Sphere",
     name: "footstepLGenerator",
-    position: footLOffsetPosition, 
+    position: footLOffsetPosition,
     dimensions: {
         x: colliderSize,
         y: colliderSize,
@@ -81,4 +81,4 @@ Script.scriptEnding.connect(function() {
     Entities.deleteEntity(footstepLGenerator);
     Entities.deleteEntity(footstepRGenerator);
 });
-}()); // END LOCAL_SCOPE
+}());
