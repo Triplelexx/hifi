@@ -15,23 +15,24 @@
 
 (function() { // BEGIN LOCAL_SCOPE
 var SCRIPT_URL = Script.resolvePath("footstepCollider.js") + "?v=" + Date.now();
+var colliderSize = 0.2 * MyAvatar.scale;
 var footLJointIndex = MyAvatar.getJointIndex("LeftFoot");
 var footLPosition = MyAvatar.getAbsoluteJointTranslationInObjectFrame(footLJointIndex);
 var footLWorldPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, footLPosition));
-var footLOffsetPosition = Vec3.sum(footLWorldPosition, { x: 0.0, y: -0.2, z: 0.0 });
+var footLOffsetPosition = Vec3.sum(footLWorldPosition, { x: 0.0, y: -colliderSize, z: 0.0 });
 var footRJointIndex = MyAvatar.getJointIndex("RightFoot");
 var footRPosition = MyAvatar.getAbsoluteJointTranslationInObjectFrame(footRJointIndex);
 var footRWorldPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, footRPosition));
-var footROffsetPosition = Vec3.sum(footRWorldPosition, { x: 0.0, y: -0.2, z: 0.0 });
+var footROffsetPosition = Vec3.sum(footRWorldPosition, { x: 0.0, y: -colliderSize, z: 0.0 });
 
 var footstepLGenerator = Entities.addEntity({
     type: "Sphere",
     name: "footstepLGenerator",
     position: footLOffsetPosition, 
     dimensions: {
-        x: 0.2,
-        y: 0.2,
-        z: 0.2
+        x: colliderSize,
+        y: colliderSize,
+        z: colliderSize
     },
     damping: 1,
     angularDamping: 1,
@@ -55,9 +56,9 @@ var footstepRGenerator = Entities.addEntity({
     name: "footstepRGenerator",
     position: footROffsetPosition,
     dimensions: {
-        x: 0.2,
-        y: 0.2,
-        z: 0.2
+        x: colliderSize,
+        y: colliderSize,
+        z: colliderSize
     },
     damping: 1,
     angularDamping: 1,
