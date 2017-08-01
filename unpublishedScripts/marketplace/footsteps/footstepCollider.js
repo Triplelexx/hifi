@@ -20,7 +20,7 @@
 
     var HIFI_PUBLIC_BUCKET = "http://s3.amazonaws.com/hifi-public/";
     var FOOTSTEP_BASE_URL = HIFI_PUBLIC_BUCKET + "sounds/Footsteps/";
-    var COLLISION_COOLDOWN_TIME = 500;
+    var COLLISION_COOLDOWN_TIME = 750;
     var footstepLSoundFiles = ["FootstepW2Left-12db.wav", "FootstepW3Left-12db.wav", "FootstepW5Left-12db.wav"];
     var footstepRSoundFiles = ["FootstepW2Right-12db.wav", "FootstepW3Right-12db.wav", "FootstepW5Right-12db.wav"];
 
@@ -58,9 +58,10 @@
             if (this.footstepAudioInjector !== undefined && this.footstepAudioInjector.isPlaying()) {
                 this.footstepAudioInjector.stop();
             }
+            var randomSoundIndex = randInt(0, this.footstepSounds.length);
             if (collisionInfo.type == 0 || collisionInfo.type == 1 && Vec3.length(MyAvatar.velocity) >= 0.5) {
-                if (this.footstepSounds[0].downloaded) {
-                    this.footstepAudioInjector = Audio.playSound(this.footstepSounds[0], {
+                if (this.footstepSounds[randomSoundIndex].downloaded) {
+                    this.footstepAudioInjector = Audio.playSound(this.footstepSounds[randomSoundIndex], {
                         position: MyAvatar.position,
                         volume: clamp((MyAvatar.scale / 7.5) * Vec3.length(MyAvatar.velocity), 0.05, 1),
                         loop: false
@@ -71,6 +72,7 @@
         },
         checkCustomFootsteps: function(collidingEntityID) {
             var footstepEntityName = Entities.getEntityProperties(this.entityID, ["name"]).name;
+            this.footstepSounds = [];
             if (footstepEntityName == "footstepLGenerator") {
                 var customFootstepLSoundFiles = getEntityCustomData("footstepLSoundFiles", collidingEntityID, undefined);
                 if (customFootstepLSoundFiles !== undefined) {
@@ -84,7 +86,7 @@
                     for (var i = 0; i < footstepLSoundFiles.length; i++) {
                         this.footstepSounds.push(SoundCache.getSound(FOOTSTEP_BASE_URL + footstepLSoundFiles[i]));
                     }
-                }     
+                }
             } else {
                 var customFootstepRSoundFiles = getEntityCustomData("footstepRSoundFiles", collidingEntityID, undefined);
                 if (customFootstepRSoundFiles !== undefined) {

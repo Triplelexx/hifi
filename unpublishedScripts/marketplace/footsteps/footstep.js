@@ -44,6 +44,7 @@ var footstepLGenerator = Entities.addEntity({
     lifetime: -1,
     shapeType: "sphere",
     script: SCRIPT_URL,
+    visible: false,
     userData: JSON.stringify({
         grabbableKey: {
             grabbable: false
@@ -70,6 +71,7 @@ var footstepRGenerator = Entities.addEntity({
     lifetime: -1,
     shapeType: "sphere",
     script: SCRIPT_URL,
+    visible: false,
     userData: JSON.stringify({
         grabbableKey: {
             grabbable: false
