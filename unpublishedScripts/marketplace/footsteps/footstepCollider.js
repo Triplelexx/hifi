@@ -33,7 +33,7 @@
 
     FootStepCollider.prototype = {
         footstepAudioInjector: undefined,
-        footstepSounds: [],
+        footstepSounds: undefined,
         avatarScale: 1,
         timeSinceLastCollision: 0,
         preload: function(entityID) {
@@ -51,7 +51,7 @@
             if (!(Date.now() - this.timeSinceLastCollision > COLLISION_COOLDOWN_TIME)) {
                 return;
             }
-            if (collisionInfo.type == 0) {
+            if (collisionInfo.type == 0 || this.footstepSounds === undefined) {
                 this.checkCustomFootsteps(collidingEntityID);
                 this.checkAvatarScaleChanged();
             }
@@ -59,15 +59,17 @@
                 this.footstepAudioInjector.stop();
             }
             var randomSoundIndex = randInt(0, this.footstepSounds.length);
-            if (collisionInfo.type == 0 || collisionInfo.type == 1 && Vec3.length(MyAvatar.velocity) >= 0.5) {
+            var footstepVolume = clamp((MyAvatar.scale / 7.5) * Vec3.length(MyAvatar.velocity), 0.05, 1);
+            if (collisionInfo.type == 0 || (collisionInfo.type == 1 && Vec3.length(MyAvatar.velocity) >= 0.5)) {
                 if (this.footstepSounds[randomSoundIndex].downloaded) {
                     this.footstepAudioInjector = Audio.playSound(this.footstepSounds[randomSoundIndex], {
                         position: MyAvatar.position,
-                        volume: clamp((MyAvatar.scale / 7.5) * Vec3.length(MyAvatar.velocity), 0.05, 1),
+                        volume: footstepVolume,
                         loop: false
                     });
                 }
                 this.timeSinceLastCollision = Date.now();
+                logWarn("FOOTSTEP: volume: " + footstepVolume);
             }
         },
         checkCustomFootsteps: function(collidingEntityID) {
