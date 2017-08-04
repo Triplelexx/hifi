@@ -21,9 +21,10 @@
 /* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
 
 (function() {
-var snowyFootstepSound1 = Script.resolvePath("snow1.wav");
-var snowyFootstepSound2 = Script.resolvePath("snow2.wav");
-var snowyFootstepSound3 = Script.resolvePath("snow3.wav");
+var BASE_URL = "http://mpassets.highfidelity.com/47115e53-6eab-4317-af78-8c6b4c470c0e-v1/";
+var snowyFootstepSound1 = BASE_URL + "snow1.wav";
+var snowyFootstepSound2 = BASE_URL + "snow3.wav";
+var snowyFootstepSound3 = BASE_URL + "snow3.wav";
 var snowyFootstepSounds = [snowyFootstepSound1, snowyFootstepSound2, snowyFootstepSound3];
 var startPosition = Vec3.sum(Vec3.sum(MyAvatar.position, {
     x: 0,
