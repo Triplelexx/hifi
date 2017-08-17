@@ -12,10 +12,8 @@
 // Distributed under the Apache License, Version 2.0.
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-/* eslint indent: ["error", 4, { "outerIIFEBody": 0 }] */
 
 (function() {
-
     Script.include("/~/system/libraries/utils.js");
 
     var HIFI_PUBLIC_BUCKET = "http://s3.amazonaws.com/hifi-public/";
@@ -69,7 +67,6 @@
                     });
                 }
                 this.timeSinceLastCollision = Date.now();
-                logWarn("FOOTSTEP: volume: " + footstepVolume);
             }
         },
         checkCustomFootsteps: function(collidingEntityID) {
